@@ -1,6 +1,4 @@
 import time, random, Tkinter, sys
-# TODO: add underscores to function names
-# TODO: eliminate shortest (arguments and variables)
 
 # TOOLS
 
@@ -23,19 +21,15 @@ def generate_map(n, d = 2):
     """
     cities = [tuple(random.random() for coordinate in range(d)) for city in range(n)]
     distance = dict()
-    shortest = []
     for a in cities:
         for b in cities:
             dist = euclidean_distance(a, b)
             distance[a, b] = dist
             distance[b, a] = dist
-            if not a == b:
-                shortest.append(dist)
-    shortest = sorted(shortest)[:n]
-    return cities, distance, shortest
+    return cities, distance
 
 
-def drawmap(tour, pixels = 500):
+def draw_map(tour, pixels = 500):
     """
     Draws a 2D tour.
     :param tour: list of city locations in the order of the tour
@@ -89,7 +83,7 @@ def reverse(path, x, y):
     newpath[x:y] = path[x:y][::-1]
     return newpath
 
-#ALGORITHMS
+# ALGORITHMS
 
 def greedy_heuristic(cities, distance):
     """
@@ -134,15 +128,14 @@ def random_search(cities, distance, timelimit = 1):
     return bestpath, bestdistance
 
 
-def backtracking(cities, distance, shortest = [], part_path = [], part_len = 0, min_path = [], min_len = 0):
-    # TODO: refine lower_bound (twice)
-    # TODO: change name to backtracking_with_pruning
-    if shortest == []:
-        shortest = [0] * len(cities)
-    if part_len == 0:
+# TODO: n = 15, seed = 'hello', this doesn't find shortest path
+# specifically: 3.32241679079 vs 3.32209034898
+def backtracking_with_pruning(cities, distance, part_path = [], part_len = 0, min_path = [], min_len = 0):
+    # TODO: refine lower_bound (both times)
+    if not part_len:
         part_path = cities[0:1]
         part_len = 0
-    if min_len == 0:
+    if not min_len:
         min_path = cities[:]
         min_len = path_length(min_path, distance)
     if len(part_path) == len(cities):
@@ -163,12 +156,12 @@ def backtracking(cities, distance, shortest = [], part_path = [], part_len = 0, 
         if lower_bound < min_len:
             sorted_cities = sorted([(distance[part_path[-1], x], x) for x in left_to_visit])
             for next_distance, next_city in sorted_cities:
-                lower_bound = part_len + next_distance + sum(remaining_distances[1:len(cities) - len(part_path) + 1])
-                if lower_bound < min_len:
+                lower_bound = part_len + next_distance + sum(remaining_distances[:len(cities) - len(part_path)])
+                if lower_bound < 10**6: #TODO IS HERE CHANGING FROM min_len: FIXED THE PROBLEM
                     new_part_path = part_path + [next_city]
                     new_part_len = part_len + distance[part_path[-1], next_city]
                     tour, tour_len = \
-                        backtracking(cities, distance, shortest, new_part_path, new_part_len, min_path, min_len)
+                        backtracking_with_pruning(cities, distance, new_part_path, new_part_len, min_path, min_len)
                     if tour_len < min_len:
                         min_path, min_len = tour, tour_len
         return min_path, min_len
@@ -198,21 +191,49 @@ def simulated_annealing(cities, distance, method, iteration_length, temp_coeffic
     return "NOT DONE YET"
 
 
+def backtracking(cities, distance, part_path = [], part_len = 0, min_path = [], min_len = 0):
+    if not part_len:
+        part_path = cities[0:1]
+        part_len = 0
+    if not min_len:
+        min_path = cities[:]
+        min_len = path_length(min_path, distance)
+    if len(part_path) == len(cities):
+        tour_len = part_len + distance[part_path[0], part_path[-1]]
+        if tour_len < min_len:
+            min_path = part_path
+            min_len = tour_len
+        return min_path, min_len
+    else:
+        left_to_visit = [city for city in cities if not city in part_path]
+        for next_city in left_to_visit:
+            new_part_path = part_path + [next_city]
+            new_part_len = part_len + distance[part_path[-1], next_city]
+            tour, tour_len = \
+                backtracking_with_pruning(cities, distance, new_part_path, new_part_len, min_path, min_len)
+            if tour_len < min_len:
+                min_path, min_len = tour, tour_len
+        return min_path, min_len
+
+
+# MAIN
+
 def main(n, seed = 'hello'):
     random.seed(seed)
-    cities, distance, shortest = generate_map(n, 2)
-    algorithms = [greedy_heuristic, random_search, local_search, backtracking, simulated_annealing][:4]
+    cities, distance = generate_map(n, 2)
+    algorithms = [greedy_heuristic, random_search, local_search,
+                  backtracking_with_pruning, backtracking, simulated_annealing][:5]
+    print('Working on n = ' + str(n) + ' cities:')
     for algorithm in algorithms:
         t = time.clock()
         tour, length = algorithm(cities, distance)
         t = time.clock() - t
-        message = 'Algorithm ' + algorithm.__name__ + ' solved TSP with n = '
-        message += str(n) + ' cities in ' + str(t) + ' seconds.'
-        message += '  Minimum tour length = ' + str(length) + '.'
+        message = 'Algorithm ' + algorithm.__name__ + ' found a path of length '
+        message += str(length) + ' in ' + str(t) + ' seconds.'
         print(message)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         main(sys.argv[1])
     else:
-        main(15)
+        main(12)
