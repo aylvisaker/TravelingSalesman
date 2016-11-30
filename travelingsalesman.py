@@ -216,13 +216,23 @@ def backtracking(cities, distance, part_path = [], part_len = 0, min_path = [], 
         return min_path, min_len
 
 
+def matrix_stuff(cities, distance):
+    n = len(cities)
+    array = [[0 for y in range(n)] for x in range(n)]
+    for x in range(n):
+        for y in range(n):
+            array[x][y] = euclidean_distance(cities[x], cities[y])
+    for row in array:
+        print(row)
+    return [], 0
+
 # MAIN
 
 def main(n, seed = 'hello'):
     random.seed(seed)
     cities, distance = generate_map(n, 2)
-    algorithms = [greedy_heuristic, random_search, local_search,
-                  backtracking_with_pruning, backtracking, simulated_annealing][:5]
+    algorithms = [greedy_heuristic, random_search, local_search, matrix_stuff, backtracking_with_pruning,
+                  backtracking, simulated_annealing][:4]
     print('Working on n = ' + str(n) + ' cities:')
     for algorithm in algorithms:
         t = time.clock()
@@ -236,4 +246,4 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         main(sys.argv[1])
     else:
-        main(12)
+        main(4)
