@@ -1,6 +1,6 @@
 import time, random, Tkinter, sys
 
-# TOOLS
+# <editor-fold desc = "Tools">
 
 def euclidean_distance(a, b):
     """
@@ -83,7 +83,9 @@ def reverse(path, x, y):
     newpath[x:y] = path[x:y][::-1]
     return newpath
 
-# ALGORITHMS
+# </editor-fold>
+
+# <editor-fold desc = "Algorithms">
 
 def greedy_heuristic(cities, distance):
     """
@@ -157,11 +159,13 @@ def backtracking_with_pruning(cities, distance, part_path = [], part_len = 0, mi
             sorted_cities = sorted([(distance[part_path[-1], x], x) for x in left_to_visit])
             for next_distance, next_city in sorted_cities:
                 lower_bound = part_len + next_distance + sum(remaining_distances[:len(cities) - len(part_path)])
-                if lower_bound < 10**6: #TODO IS HERE CHANGING FROM min_len: FIXED THE PROBLEM
+                if lower_bound < min_len: #TODO: CHANGING min_len TO 10**6 FIXED THE PROBLEM
                     new_part_path = part_path + [next_city]
                     new_part_len = part_len + distance[part_path[-1], next_city]
                     tour, tour_len = \
                         backtracking_with_pruning(cities, distance, new_part_path, new_part_len, min_path, min_len)
+                    if tour_len < lower_bound:
+                        print('DANGER WILL ROBINSON', round(lower_bound, 2), round(tour_len, 2))
                     if tour_len < min_len:
                         min_path, min_len = tour, tour_len
         return min_path, min_len
@@ -215,7 +219,7 @@ def backtracking(cities, distance, part_path = [], part_len = 0, min_path = [], 
                 min_path, min_len = tour, tour_len
         return min_path, min_len
 
-
+# TODO: Make something of this.
 def matrix_stuff(cities, distance):
     n = len(cities)
     array = [[0 for y in range(n)] for x in range(n)]
@@ -223,16 +227,18 @@ def matrix_stuff(cities, distance):
         for y in range(n):
             array[x][y] = euclidean_distance(cities[x], cities[y])
     for row in array:
-        print(row)
+        print(map(lambda x: round(x, 2), row))
     return [], 0
 
-# MAIN
+# </editor-fold>
+
+# <editor-fold desc = "Main">
 
 def main(n, seed = 'hello'):
     random.seed(seed)
     cities, distance = generate_map(n, 2)
     algorithms = [greedy_heuristic, random_search, local_search, matrix_stuff, backtracking_with_pruning,
-                  backtracking, simulated_annealing][:4]
+                  backtracking, simulated_annealing][4:6]
     print('Working on n = ' + str(n) + ' cities:')
     for algorithm in algorithms:
         t = time.clock()
@@ -246,4 +252,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         main(sys.argv[1])
     else:
-        main(4)
+        main(15)
+
+# </editor-fold>
